@@ -29,14 +29,15 @@ For detailed instructions on cloning this repository as the base for a brand-new
 
 ## Codex CLI bootstrap prompt
 
-When you create a brand-new integration repo, paste the prompt below into Codex CLI (replace `<NEW_REPO_PATH>` with the absolute path to your empty project directory). Codex will then mirror the template from `https://github.com/trappify/hass_template`, configure git/hooks, run tests, and spin up Home Assistant automatically.
+When you create a brand-new integration repo, paste the prompt below into Codex CLI exactly as written. Codex will detect the working directory via `pwd`, mirror the template from `https://github.com/trappify/hass_template`, configure git/hooks, run tests, and spin up Home Assistant automatically—no manual paths or ports required.
 
 ```
-You are Codex working inside <NEW_REPO_PATH>. Bootstrap this project by cloning the Home Assistant template from https://github.com/trappify/hass_template into /tmp/hass_template, copy everything except its .git directory into the current repo, and remove the temporary clone. After that:
-1. Run `python3 scripts/configure_repo.py --non-interactive`.
-2. Create a Python venv (`python3 -m venv .venv && source .venv/bin/activate`), install `.[dev]`, and run `pytest`.
-3. Start the dev container with `python3 scripts/ha_manager.py start` (use `--auto` if it is already up) so I can browse Home Assistant right away; report the host IP/port and default credentials from `.env`.
-4. Summarize what you copied or changed and list any follow-up steps I should take.
+Determine the absolute project path via `pwd` (call it <NEW_PROJECT_ROOT>). Working inside that directory:
+1. Clone https://github.com/trappify/hass_template into /tmp/hass_template, copy everything except its .git folder into <NEW_PROJECT_ROOT>, and remove the temporary clone.
+2. Run `python3 scripts/configure_repo.py --non-interactive`.
+3. Create a Python venv (`python3 -m venv .venv && source .venv/bin/activate`), install `.[dev]`, and run `pytest`.
+4. Start the dev container with `python3 scripts/ha_manager.py start --auto` so it picks an open port automatically, then report the reachable URL and the credentials from `.env`.
+5. Summarize what you copied or changed and list any follow-up steps I should take.
 Never skip restarting the container after changes, and never return work unless the tests succeed.
 ```
 

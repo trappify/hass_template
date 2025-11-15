@@ -8,6 +8,12 @@ homeassistant/.storage/person*
 homeassistant/.storage/core.*
 homeassistant/.storage/*
 !homeassistant/.storage/.gitkeep
+homeassistant/home-assistant*
+homeassistant/*.db*
+homeassistant/.HA_VERSION
+homeassistant/.ha_run.lock
+homeassistant/deps/
+homeassistant/tts/
 .DS_Store
 *.pyc
 *.pyo
