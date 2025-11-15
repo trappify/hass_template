@@ -65,3 +65,27 @@ class HACSInstaller:
         target_dir.mkdir(parents=True, exist_ok=True)
         with zipfile.ZipFile(io.BytesIO(archive_bytes)) as zf:
             zf.extractall(target_dir)
+        self._apply_frontend_patch(target_dir)
+
+    def _apply_frontend_patch(self, target_dir: Path) -> None:
+        frontend_file = target_dir / "frontend.py"
+        if not frontend_file.exists():
+            return
+        text = frontend_file.read_text()
+        if "_register_hacs_static" in text:
+            return
+        helper = """
+
+def _register_hacs_static(hass: HomeAssistant, url_path: str, path: str, cache_headers: bool = False) -> None:
+    register = getattr(hass.http, "register_static_path", None)
+    if register:
+        register(url_path, path, cache_headers=cache_headers)
+        return
+    hass.http.async_register_static_paths([(url_path, path, cache_headers)])
+"""
+        if "if TYPE_CHECKING:" in text:
+            text = text.replace("if TYPE_CHECKING:", helper + "\nif TYPE_CHECKING:", 1)
+        else:
+            text = text + helper
+        text = text.replace("hass.http.register_static_path(", "_register_hacs_static(hass, ")
+        frontend_file.write_text(text)

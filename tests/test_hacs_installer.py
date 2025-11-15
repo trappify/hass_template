@@ -24,6 +24,12 @@ def build_archive() -> bytes:
         zip_file.writestr("__init__.py", "# hacs")
         zip_file.writestr("manifest.json", "{}")
         zip_file.writestr("api/__init__.py", "# api")
+        zip_file.writestr(
+            "frontend.py",
+            "from homeassistant.core import HomeAssistant, callback\n\n"
+            "def async_register_frontend(hass: HomeAssistant, hacs=None):\n"
+            '    hass.http.register_static_path("/hacsfiles", "/tmp", cache_headers=False)\n',
+        )
     return buffer.getvalue()
 
 
@@ -38,6 +44,9 @@ def test_installer_extracts_when_missing(tmp_path):
     assert downloader.requested_url.endswith("/1.0.0/hacs.zip")
     target = config_dir / "custom_components" / "hacs" / "__init__.py"
     assert target.exists()
+    patched_frontend = config_dir / "custom_components" / "hacs" / "frontend.py"
+    text = patched_frontend.read_text()
+    assert "_register_hacs_static" in text
 
     changed_again = installer.ensure("1.0.0")
     assert changed_again is False
