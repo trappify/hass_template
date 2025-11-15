@@ -1,6 +1,9 @@
 import io
+import json
 import zipfile
 from pathlib import Path
+
+import pytest
 
 from ha_template.hacs_installer import HACSInstaller
 
@@ -38,3 +41,32 @@ def test_installer_extracts_when_missing(tmp_path):
 
     changed_again = installer.ensure("1.0.0")
     assert changed_again is False
+
+
+def test_installer_fetches_latest(monkeypatch, tmp_path):
+    class FakeResponse:
+        def __init__(self, payload: dict):
+            self.payload = payload
+
+        def read(self):
+            return json.dumps(self.payload).encode()
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, exc_type, exc, tb):
+            return False
+
+    def fake_urlopen(url):
+        assert url.endswith("/releases/latest")
+        return FakeResponse({"tag_name": "v9.9.9"})
+
+    monkeypatch.setattr("ha_template.hacs_installer.request.urlopen", fake_urlopen)
+
+    config_dir = tmp_path / "config"
+    config_dir.mkdir()
+    downloader = FakeDownloader(build_archive())
+    installer = HACSInstaller(config_dir, downloader=downloader)
+
+    installer.ensure("latest")
+    assert downloader.requested_url.endswith("/v9.9.9/hacs.zip")

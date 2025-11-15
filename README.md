@@ -53,7 +53,7 @@ The config also enables the `trusted_networks` auth provider for local subnets s
 
 ## HACS
 
-`HACSInstaller` downloads the release archive defined by `HACS_VERSION` (default `1.34.0`) and extracts it into `homeassistant/custom_components/hacs`. The `homeassistant/www/community` directory is also created automatically. To bump versions, update `.env.example` and rerun `scripts/configure_repo.py`.
+`HACSInstaller` downloads the release archive defined by `HACS_VERSION` (default `latest`) and extracts it into `homeassistant/custom_components/hacs`. The `homeassistant/www/community` directory is also created automatically. To pin a specific version, change `HACS_VERSION` in `.env` (or `.env.example` for new repos) and rerun `scripts/configure_repo.py`.
 
 ## Devcontainer behavior
 

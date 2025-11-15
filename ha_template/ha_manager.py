@@ -18,7 +18,7 @@ DEFAULT_ENV = {
     "DEFAULT_HA_USERNAME": "devbox",
     "DEFAULT_HA_PASSWORD": "devbox",
     "DEFAULT_HA_NAME": "Dev Box Owner",
-    "HACS_VERSION": "1.34.0",
+    "HACS_VERSION": "latest",
 }
 
 
