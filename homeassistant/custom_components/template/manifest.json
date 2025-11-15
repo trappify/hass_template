@@ -1,0 +1,12 @@
+{
+  "domain": "template_dev",
+  "name": "Template Dev Integration",
+  "version": "0.1.0",
+  "documentation": "https://developers.home-assistant.io/",
+  "requirements": [],
+  "codeowners": [
+    "@trappify"
+  ],
+  "iot_class": "local_polling",
+  "config_flow": false
+}
