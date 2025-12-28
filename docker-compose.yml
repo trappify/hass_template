@@ -1,7 +1,7 @@
 services:
   homeassistant:
     image: ghcr.io/home-assistant/home-assistant:stable
-    container_name: ${HA_CONTAINER_NAME:-ha_template}
+    user: "${HOST_UID:-1000}:${HOST_GID:-1000}"
     restart: unless-stopped
     privileged: true
     network_mode: bridge
@@ -21,4 +21,3 @@ services:
       timeout: 10s
       retries: 5
       start_period: 120s
-name: hass_template

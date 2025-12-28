@@ -59,3 +59,13 @@ class DockerController:
     ) -> subprocess.CompletedProcess:
         exec_command = ["exec", "-T", service, *command]
         return self.run(*exec_command, check=check, capture=capture)
+
+    def run_one_off(
+        self,
+        service: str,
+        command: Iterable[str],
+        check: bool = True,
+        capture: bool = False,
+    ) -> subprocess.CompletedProcess:
+        run_command = ["run", "--rm", "--no-deps", "-T", service, *command]
+        return self.run(*run_command, check=check, capture=capture)

@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 
 from ha_template.env import EnvManager
@@ -50,15 +51,17 @@ class FakeHacs:
 
 
 class FakeUserSetup:
-    def __init__(self):
+    def __init__(self, created: bool = True):
         self.onboarding_calls = 0
         self.user_calls = []
+        self.created = created
 
     def ensure_onboarding_flag(self):
         self.onboarding_calls += 1
 
     def ensure_user(self, username: str, password: str, display_name: str):
         self.user_calls.append((username, password, display_name))
+        return self.created
 
 
 def build_repo(tmp_path: Path) -> Path:
@@ -76,7 +79,7 @@ def test_manager_start_prepares_environment(tmp_path):
     port_allocator = FakePortAllocator()
     docker = FakeDocker()
     hacs = FakeHacs()
-    user_setup = FakeUserSetup()
+    user_setup = FakeUserSetup(created=True)
 
     manager = HomeAssistantManager(
         repo,
@@ -92,6 +95,9 @@ def test_manager_start_prepares_environment(tmp_path):
     assert docker.up_calls == [False]
     assert user_setup.user_calls
     assert "HOST_HA_PORT=9001" in (repo / ".env").read_text()
+    assert f"HOST_UID={os.getuid()}" in (repo / ".env").read_text()
+    assert f"HOST_GID={os.getgid()}" in (repo / ".env").read_text()
+    assert "COMPOSE_PROJECT_NAME=" in (repo / ".env").read_text()
 
 
 def test_manager_autostart_skips_if_running(tmp_path):
@@ -101,7 +107,7 @@ def test_manager_autostart_skips_if_running(tmp_path):
     docker = FakeDocker()
     docker.running = True
     hacs = FakeHacs()
-    user_setup = FakeUserSetup()
+    user_setup = FakeUserSetup(created=False)
 
     manager = HomeAssistantManager(
         repo,
@@ -115,3 +121,28 @@ def test_manager_autostart_skips_if_running(tmp_path):
     started = manager.start(auto=True)
     assert started is False
     assert not docker.up_calls
+    assert user_setup.user_calls
+
+
+def test_manager_restarts_when_credentials_added_and_running(tmp_path):
+    repo = build_repo(tmp_path)
+    env_manager = EnvManager(repo / ".env")
+    port_allocator = FakePortAllocator()
+    docker = FakeDocker()
+    docker.running = True
+    hacs = FakeHacs()
+    user_setup = FakeUserSetup(created=True)
+
+    manager = HomeAssistantManager(
+        repo,
+        env_manager=env_manager,
+        port_allocator=port_allocator,
+        docker=docker,
+        hacs=hacs,
+        user_setup=user_setup,
+    )
+
+    started = manager.start(auto=True)
+    assert started is True
+    assert docker.stop_calls == 1
+    assert docker.up_calls == [False]

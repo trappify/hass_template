@@ -30,6 +30,7 @@ Use the helper script (or the equivalent `Makefile` targets) so automation stays
 - `python3 scripts/ha_manager.py stop|restart|rebuild|status` – lifecycle commands.
 
 The first free UI port (within `8123-9123`) will be detected automatically and written to `.env` under `HOST_HA_PORT`. Multiple template-derived projects can run on the same host with no extra work.
+The helper also writes `COMPOSE_PROJECT_NAME` so each clone uses its own container namespace, preventing cross-repo collisions.
 
 ## 4. Verify persistence
 

@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import hashlib
+import os
 import shutil
 from pathlib import Path
 
@@ -12,7 +14,6 @@ from .ports import PortAllocator
 from .user_setup import UserSetup
 
 DEFAULT_ENV = {
-    "HA_CONTAINER_NAME": "ha_template",
     "HOST_HA_PORT": "auto",
     "TZ": "UTC",
     "DEFAULT_HA_USERNAME": "devbox",
@@ -50,7 +51,15 @@ class HomeAssistantManager:
         self.env_manager.load()
         for key, value in DEFAULT_ENV.items():
             self.env_manager.ensure(key, lambda v=value: v)
+        self.env_manager.ensure("COMPOSE_PROJECT_NAME", self._compose_project_name)
+        self.env_manager.ensure("HOST_UID", lambda: str(os.getuid()))
+        self.env_manager.ensure("HOST_GID", lambda: str(os.getgid()))
         self._ensure_port()
+
+    def _compose_project_name(self) -> str:
+        slug = "".join(ch if ch.isalnum() else "_" for ch in self.repo_root.name.lower())
+        digest = hashlib.sha1(str(self.repo_root).encode("utf-8")).hexdigest()[:8]
+        return f"ha_{slug}_{digest}"
 
     def _ensure_port(self) -> None:
         def allocate() -> str:
@@ -63,19 +72,24 @@ class HomeAssistantManager:
         (self.config_dir / "www" / "community").mkdir(parents=True, exist_ok=True)
         (self.config_dir / ".storage").mkdir(parents=True, exist_ok=True)
 
-    def prepare(self) -> None:
+    def prepare(self) -> bool:
         self._ensure_env_file()
         self._ensure_config_dirs()
         hacs_version = self.env_manager.get("HACS_VERSION") or DEFAULT_ENV["HACS_VERSION"]
         self.hacs.ensure(hacs_version)
         self.user_setup.ensure_onboarding_flag()
+        return self._ensure_credentials()
 
     def start(self, auto: bool = False) -> bool:
-        self.prepare()
-        if auto and self.docker.is_running():
+        credentials_added = self.prepare()
+        running = self.docker.is_running()
+        if running and credentials_added:
+            self.docker.stop()
+            self.docker.up()
+            return True
+        if auto and running:
             return False
         self.docker.up()
-        self._ensure_credentials()
         return True
 
     def stop(self) -> None:
@@ -89,13 +103,12 @@ class HomeAssistantManager:
         self.prepare()
         self.docker.pull()
         self.docker.up(rebuild=True)
-        self._ensure_credentials()
 
     def status(self) -> str:
         return self.docker.status()
 
-    def _ensure_credentials(self) -> None:
+    def _ensure_credentials(self) -> bool:
         username = self.env_manager.get("DEFAULT_HA_USERNAME") or DEFAULT_ENV["DEFAULT_HA_USERNAME"]
         password = self.env_manager.get("DEFAULT_HA_PASSWORD") or DEFAULT_ENV["DEFAULT_HA_PASSWORD"]
         display_name = self.env_manager.get("DEFAULT_HA_NAME") or DEFAULT_ENV["DEFAULT_HA_NAME"]
-        self.user_setup.ensure_user(username, password, display_name)
+        return self.user_setup.ensure_user(username, password, display_name)

@@ -10,6 +10,8 @@ This repository bootstraps a persistent Home Assistant instance that runs inside
 - **Turnkey HACS** – `scripts/ha_manager.py` downloads and extracts the requested HACS release before each start if it is not already present.
 - **Auto-start hooks** – `.githooks/post-merge`/`post-checkout` call `ha_manager.py autostart` so pulling new changes or switching branches spins up the container without manual intervention.
 - **Tests for all tooling** – `pytest` covers the environment helpers, installers, docker wrapper, and the high-level manager class.
+- **Host-matched UID/GID** – the container runs with the host user IDs (`HOST_UID`/`HOST_GID`) to avoid permission issues on bind-mounted files.
+- **Collision-free containers** – the docker compose project name is derived per repo (`COMPOSE_PROJECT_NAME`) so multiple template clones do not share a single container.
 
 ## Usage
 
@@ -50,6 +52,7 @@ Values live in `.env` and can be customized as needed. By default the template p
 - `DEFAULT_HA_NAME`
 
 The config also enables the `trusted_networks` auth provider for local subnets so testing remains convenient.
+If the Home Assistant container is already running when credentials are added, the manager restarts it so the login is immediately usable.
 
 ## HACS
 
